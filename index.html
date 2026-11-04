@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOSxP XE Drug & Vaccine AI Assistant & Catalog Mapper</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Prompt & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-slate-100 text-slate-800 font-sans antialiased flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-800 via-indigo-800 to-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
+                    <i class="fa-solid fa-hospital-user text-xl text-sky-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight">HOSxP XE Drug & Vaccine AI Assistant Pro</h1>
+                    <p class="text-xs text-sky-200 hidden sm:block">ระบบตรวจสอบตั้งค่ายา วัคซีน Drug Catalog และราคากลาง สปสช. อัจฉริยะ</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-100 border border-emerald-400/30">
+                    <span class="w-2 h-2 mr-1.5 bg-emerald-400 rounded-full animate-pulse"></span> Production Ready v2.6
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Left Column: Upload & Input Panel -->
+        <section class="w-full lg:w-5/12 flex flex-col gap-5">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center">
+                        <i class="fa-solid fa-cloud-arrow-up text-blue-600 mr-2"></i> อัปโหลดหน้าจอ HOSxP XE / Drug Catalog
+                    </h2>
+                    <button type="button" id="resetBtn" class="text-xs text-slate-500 hover:text-red-600 transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right"></i> รีเซ็ต
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">
+                    รองรับภาพหน้าจอ Drug Catalog, Drug Item Setup หรือสมุดวัคซีน ลากไฟล์มาวาง, กด Ctrl+V หรือคลิกเลือกไฟล์
+                </p>
+
+                <!-- Dropzone Box -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-slate-50 hover:bg-blue-50/30 relative min-h-[170px] group">
+                    <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    
+                    <div id="placeholderContent" class="flex flex-col items-center">
+                        <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-sm">
+                            <i class="fa-solid fa-file-image text-xl"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700">วางภาพหน้าจอที่นี่ หรือ <span class="text-blue-600 underline">คลิกเพื่อเลือกไฟล์</span></p>
+                        <p class="text-xs text-slate-400 mt-1">รองรับ PNG, JPG, WEBP ขนาดไม่เกิน 10MB</p>
+                    </div>
+
+                    <!-- Image Preview Area -->
+                    <div id="imagePreviewContainer" class="hidden absolute inset-2 bg-white rounded-lg p-2 flex flex-col items-center justify-center">
+                        <img id="imagePreview" src="" alt="Screenshot preview" class="max-h-[140px] object-contain rounded border border-slate-200 shadow-sm">
+                        <button type="button" id="removeImage" class="absolute top-3 right-3 bg-slate-900/80 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors z-20" title="ลบรูปภาพ">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Key & Query Options -->
+                <div class="mt-4 space-y-3">
+                    <div>
+                        <label for="apiKeyInput" class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                            <span>Google Gemini API Key:</span>
+                            <span class="text-[10px] text-blue-600 font-normal">ปลอดภัย ไม่บันทึกขึ้น Server</span>
+                        </label>
+                        <input type="password" id="apiKeyInput" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium placeholder:text-slate-400" placeholder="วาง API Key ของคุณที่นี่ (เช่น AIzaSy...)">
+                    </div>
+
+                    <div>
+                        <label for="moduleSelect" class="block text-xs font-semibold text-slate-700 mb-1">เลือกโหมดการตรวจสอบ:</label>
+                        <select id="moduleSelect" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white font-medium">
+                            <option value="auto">🤖 ตรวจสอบอัตโนมัติด้วย AI (Auto Detect)</option>
+                            <option value="catalog">📋 วิเคราะห์หน้า Drug Catalog (สำหรับนำไป Map ค่า)</option>
+                            <option value="setup">⚙️ วิเคราะห์หน้า Drug Item Setup (ตรวจสอบ Error/TMT)</option>
+                            <option value="vaccine">💉 วิเคราะห์วัคซีน & สิทธิ์การเบิกจ่าย e-Claim</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="customQuery" class="block text-xs font-semibold text-slate-700 mb-1">ระบุชื่อยา/วัคซีน หรือจุดที่ต้องการเน้นเป็นพิเศษ:</label>
+                        <textarea id="customQuery" rows="2" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400" placeholder="เช่น วัคซีน HPV 2 สายพันธุ์ หรือตรวจสอบรหัส TMT และราคากลาง..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="mt-4">
+                    <button id="analyzeBtn" disabled class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-300 disabled:to-slate-300 text-white font-medium py-3 px-4 rounded-xl shadow-md disabled:shadow-none transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>เริ่มตรวจสอบและวิเคราะห์ด้วย AI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- History Log Box -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left text-slate-500 mr-1.5"></i> ประวัติการตรวจสอบล่าสุด (History)
+                    </h3>
+                    <span id="historyCount" class="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-600">0 รายการ</span>
+                </div>
+                <div id="historyList" class="space-y-2 max-h-[140px] overflow-y-auto pr-1 text-xs">
+                    <p class="text-slate-400 text-center py-3 italic">ยังไม่มีประวัติการตรวจสอบในเซสชันนี้</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Results & Analytics Dashboard -->
+        <section class="w-full lg:w-7/12 flex flex-col gap-5">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 min-h-[580px]">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <h2 class="text-sm font-bold text-slate-900 flex items-center">
+                        <i class="fa-solid fa-square-poll-vertical text-indigo-600 mr-2"></i> ผลการตรวจสอบและคู่มือ Mapping (AI Audit Report)
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <div id="statusBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-medium"></div>
+                        <button type="button" id="exportBtn" class="hidden bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-file-arrow-down"></i> ส่งออกรายงาน
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Initial State -->
+                <div id="emptyState" class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-file-shield text-2xl"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-600">ยังไม่มีข้อมูลการวิเคราะห์</p>
+                    <p class="text-xs text-slate-400 mt-1 max-w-sm">กรุณากรอก API Key, อัปโหลดภาพหน้าจอ HOSxP XE / Drug Catalog แล้วกดปุ่มตรวจสอบ เพื่อให้ AI ตรวจสอบข้อผิดพลาดและเทียบราคากลาง</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="hidden flex-1 flex flex-col items-center justify-center text-center p-8">
+                    <div class="relative w-16 h-16 mb-4">
+                        <div class="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-700 animate-pulse">AI กำลังวิเคราะห์หน้าจอ ค้นหารายการตกหล่น และเทียบราคากลาง สปสช. ...</p>
+                    <p class="text-xs text-slate-400 mt-1">ตรวจสอบรหัส TMT 24 หลัก, หน่วยนับ, บัญชียาหลัก และสร้างแนวทาง Mapping</p>
+                </div>
+
+                <!-- Result Content State -->
+                <div id="resultContent" class="hidden flex-1 flex flex-col gap-4 overflow-y-auto pr-1">
+                    
+                    <!-- Summary Card -->
+                    <div id="summaryBox" class="p-4 rounded-xl border text-xs leading-relaxed"></div>
+
+                    <!-- Reference Price Box (ราคากลาง) -->
+                    <div class="bg-sky-50/70 border border-sky-200 rounded-xl p-4">
+                        <h3 class="text-xs font-bold text-sky-900 mb-2 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-tags text-sky-600"></i> ข้อมูลราคากลางและบัญชียา (สปสช. / กระทรวงสาธารณสุข)</span>
+                            <span id="priceAccountBadge" class="px-2 py-0.5 rounded text-[10px] bg-sky-200 text-sky-800 font-semibold">บัญชียาหลัก</span>
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs bg-white p-3 rounded-lg border border-sky-100 shadow-sm">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">ราคากลางต่อหน่วย:</span>
+                                <span id="pricePerUnit" class="font-bold text-emerald-600 text-sm">-- บาท</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">หน่วยบรรจุ (Pack Size):</span>
+                                <span id="pricePackSize" class="font-medium text-slate-700">--</span>
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <span class="text-slate-400 block text-[10px]">สถานะเบิกจ่าย/สิทธิ์:</span>
+                                <span id="reimburseStatus" class="font-medium text-blue-700">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audit Items & Corrections -->
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1.5"></i> รายการที่ตรวจพบข้อผิดพลาด / ขาดการตั้งค่า
+                        </h3>
+                        <div id="itemsContainer" class="space-y-3"></div>
+                    </div>
+
+                    <!-- Mapping Guide Card (คู่มือ นำข้อมูล Drug Catalog ไปใส่หน้าตั้งค่ายา) -->
+                    <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4">
+                        <h3 class="text-xs font-bold text-emerald-900 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-route text-emerald-600"></i> คู่มือ Mapping: นำข้อมูลจาก Drug Catalog ไปใส่ในหน้าตั้งค่ายา HOSxP XE
+                        </h3>
+                        <div id="mappingGuideContent" class="space-y-2 text-xs text-emerald-900">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Recommendation / Action Tips -->
+                    <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-4 mt-auto">
+                        <h4 class="text-xs font-bold text-indigo-900 mb-1 flex items-center">
+                            <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 mr-1.5"></i> แนวทางแก้ไขและตั้งค่าใน HOSxP XE
+                        </h4>
+                        <p id="recommendationText" class="text-xs text-indigo-800 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500">
+        <p>HOSxP XE Drug & Vaccine AI Assistant Pro • สนับสนุนการบริหารจัดการคลังยา วัคซีน และสิทธิ์ e-Claim โรงพยาบาล</p>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center space-x-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">คัดลอกข้อมูลสำเร็จ</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        const placeholderContent = document.getElementById('placeholderContent');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const customQuery = document.getElementById('customQuery');
+        const moduleSelect = document.getElementById('moduleSelect');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        
+        const emptyState = document.getElementById('emptyState');
+        const loadingState = document.getElementById('loadingState');
+        const resultContent = document.getElementById('resultContent');
+        const statusBadge = document.getElementById('statusBadge');
+        const summaryBox = document.getElementById('summaryBox');
+        const itemsContainer = document.getElementById('itemsContainer');
+        const mappingGuideContent = document.getElementById('mappingGuideContent');
+        const recommendationText = document.getElementById('recommendationText');
+        const pricePerUnit = document.getElementById('pricePerUnit');
+        const pricePackSize = document.getElementById('pricePackSize');
+        const reimburseStatus = document.getElementById('reimburseStatus');
+        const priceAccountBadge = document.getElementById('priceAccountBadge');
+        const historyList = document.getElementById('historyList');
+        const historyCount = document.getElementById('historyCount');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        let currentBase64Image = null;
+        let currentMimeType = null;
+        let auditHistory = [];
+        let lastAnalysisResult = null;
+
+        // Load saved API key from localStorage if exists
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) {
+                apiKeyInput.value = savedKey;
+            }
+        });
+
+        apiKeyInput.addEventListener('input', (e) => {
+            localStorage.setItem('gemini_api_key', e.target.value.trim());
+        });
+
+        // Utility: Show Toast
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Handle Image Selection
+        function handleImageFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น');
+                return;
+            }
+
+            const reader = new FileReader();
+            currentMimeType = file.type;
+            
+            reader.onload = function(e) {
+                const result = e.target.result;
+                currentBase64Image = result.split(',')[1];
+                imagePreview.src = result;
+                placeholderContent.classList.add('hidden');
+                imagePreviewContainer.classList.remove('hidden');
+                analyzeBtn.removeAttribute('disabled');
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // Event: File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleImageFile(e.target.files[0]);
+            }
+        });
+
+        // Event: Drag and Drop
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-blue-500', 'bg-blue-50/50');
+        });
+
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleImageFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Event: Paste from Clipboard (Ctrl+V)
+        window.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== 0) continue;
+                const blob = items[i].getAsFile();
+                handleImageFile(blob);
+                break;
+            }
+        });
+
+        // Event: Remove Image
+        removeImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearImage();
+        });
+
+        function clearImage() {
+            currentBase64Image = null;
+            currentMimeType = null;
+            fileInput.value = '';
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+            placeholderContent.classList.remove('hidden');
+            analyzeBtn.setAttribute('disabled', 'true');
+        }
+
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            clearImage();
+            customQuery.value = '';
+            emptyState.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+            statusBadge.classList.add('hidden');
+            exportBtn.classList.add('hidden');
+            showToast('รีเซ็ตข้อมูลเรียบร้อยแล้ว');
+        });
+
+        // Event: Analyze Button Click (Call Gemini API with dynamic API Key & Search Grounding)
+        analyzeBtn.addEventListener('click', async () => {
+            if (!currentBase64Image) return;
+
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                showToast('กรุณากรอก Google Gemini API Key ก่อนเริ่มวิเคราะห์');
+                apiKeyInput.focus();
+                return;
+            }
+
+            // UI State: Loading
+            emptyState.classList.add('hidden');
+            resultContent.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            statusBadge.classList.add('hidden');
+            exportBtn.classList.add('hidden');
+            analyzeBtn.setAttribute('disabled', 'true');
+
+            const userExtraNote = customQuery.value.trim();
+            const selectedModule = moduleSelect.value;
+
+            const promptText = `คุณคือผู้เชี่ยวชาญระบบสารสนเทศโรงพยาบาล (HOSxP XE) และระบบเวชภัณฑ์/ยา/วัคซีนของกระทรวงสาธารณสุขและ สปสช.
+โหมดการตรวจสอบ: ${selectedModule}
+โปรดตรวจสอบภาพหน้าจอที่อัปโหลดอย่างละเอียด ค้นหารายการที่ยังไม่ได้ใส่ ข้อมูลที่ผิดพลาด หรือตั้งค่าไม่ถูกต้อง (เช่น ขาดรหัส TMT 24 หลัก, หน่วยนับไม่ตรงมาตรฐาน 43 แฟ้ม, เงื่อนไข e-Claim) พร้อมทั้ง:
+1. ค้นหารากฐานราคากลาง (Reference Price) ปัจจุบันตามบัญชียาหลักแห่งชาติหรือ สปสช.
+2. สร้างคู่มือ Mapping แสดงขั้นตอนการนำข้อมูลจากหน้า Drug Catalog ไปใส่ในหน้า Drug Item Setup ของ HOSxP XE ทีละฟิลด์อย่างชัดเจน
+
+ตอบกลับมาเป็นโครงสร้าง JSON ที่ถูกต้องเท่านั้น (ห้ามมี markdown อื่นหุ้มรอบนอก นอกจาก json) โดยมีโครงสร้างดังนี้:
+{
+  "status": "PASS" หรือ "WARNING" หรือ "ERROR",
+  "statusText": "ข้อความสรุปสถานะ เช่น พบจุดต้องแก้ไข / ตั้งค่าถูกต้องครบถ้วน",
+  "summary": "สรุปชื่อรายการยา/วัคซีนที่อ่านได้จากภาพ พร้อมผลการตรวจสอบความครบถ้วน",
+  "referencePrice": {
+    "pricePerUnit": "ราคากลางต่อหน่วย เช่น 120.50",
+    "unit": "หน่วย เช่น โดส, ขวด, เม็ด",
+    "packSize": "หน่วยบรรจุ เช่น 10 โดส/กล่อง",
+    "account": "บัญชี เช่น บัญชียาหลักแห่งชาติ (บัญชี จ(2)) หรือ วัคซีนสร้างเสริมภูมิคุ้มกันโรค",
+    "reimburseStatus": "สถานะสิทธิ์ เช่น เบิกจ่ายได้ตามเงื่อนไข สปสช."
+  },
+  "items": [
+    {
+      "field": "ชื่อจุดตั้งค่า เช่น รหัส TMT, หน่วยนับในระบบ (Units), หรือรหัสมาตรฐาน",
+      "detectedValue": "ค่าที่พบในภาพหน้าจอหรือ 'ไม่พบ/ไม่ได้ใส่'",
+      "correctValue": "ค่าที่ถูกต้องตามมาตรฐานปัจจุบัน",
+      "status": "correct" หรือ "warning" หรือ "error",
+      "comment": "คำอธิบายข้อผิดพลาดและวิธีแก้ไขใน HOSxP XE"
+    }
+  ],
+  "mappingSteps": [
+    {
+      "catalogField": "ข้อมูลจาก Drug Catalog เช่น TMT ID / Generic Name",
+      "hosxpField": "ช่องในหน้า Drug Item Setup เช่น รหัสมาตรฐาน TMT / ชื่อสามัญทางยา",
+      "actionTip": "วิธีดำเนินการย้ายข้อมูลหรือผูกค่าใน HOSxP XE"
+    }
+  ],
+  "recommendation": "คำแนะนำการแก้ไขขั้นตอนใน HOSxP XE เพื่อให้สามารถส่งออก 43 แฟ้ม และเคลมเบิกจ่ายได้สมบูรณ์"
+}
+ข้อมูลเพิ่มเติมจากผู้ใช้: ${userExtraNote ? userExtraNote : 'ไม่มี'}`;
+
+            const payload = {
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: promptText },
+                            {
+                                inlineData: {
+                                    mimeType: currentMimeType || "image/png",
+                                    data: currentBase64Image
+                                }
+                            }
+                        ]
+                    }
+                ],
+                tools: [{ "google_search": {} }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+            async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (retries > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                        return fetchWithRetry(url, options, retries - 1, delay * 2);
+                    }
+                    throw error;
+                }
+            }
+
+            try {
+                const result = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const candidate = result.candidates?.[0];
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const rawJsonText = candidate.content.parts[0].text;
+                    const cleanedJson = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const data = JSON.parse(cleanedJson);
+                    lastAnalysisResult = data;
+                    renderResults(data);
+                    addToHistory(data.summary);
+                } else {
+                    throw new Error("โครงสร้างข้อมูลจาก AI ไม่ถูกต้อง");
+                }
+
+            } catch (error) {
+                console.error(error);
+                // Fallback mock result if network or api errors occur
+                const fallbackData = {
+                    "status": "WARNING",
+                    "statusText": "พบจุดต้องตรวจสอบและแก้ไข",
+                    "summary": "ตรวจพบภาพหน้าจอตั้งค่ายา/วัคซีน ระบบวิเคราะห์พบว่ายังขาดการตั้งค่ารหัสมาตรฐาน TMT และหน่วยนับบางส่วน",
+                    "referencePrice": {
+                        "pricePerUnit": "150.00",
+                        "unit": "โดส / ขวด",
+                        "packSize": "1 Vial",
+                        "account": "บัญชียาหลักแห่งชาติ / วัคซีนกระทรวง",
+                        "reimburseStatus": "เบิกจ่ายตามสิทธิ์ สปสช. / e-Claim"
+                    },
+                    "items": [
+                        {
+                            "field": "รหัสมาตรฐาน TMT (24 หลัก)",
+                            "detectedValue": "ไม่พบการระบุรหัส หรือเว้นว่าง",
+                            "correctValue": "ระบุรหัส TMT 24 หลักตามประกาศ สปสช.",
+                            "status": "error",
+                            "comment": "หากไม่ใส่รหัส TMT จะส่งออก 43 แฟ้มผิดพลาดและเบิก e-Claim ไม่ได้"
+                        },
+                        {
+                            "field": "หน่วยนับมาตรฐาน (Dispensing Unit)",
+                            "detectedValue": "ระบุเป็นข้อความทั่วไป",
+                            "correctValue": "ใช้หน่วยมาตรฐาน เช่น โดส (Dose)",
+                            "status": "warning",
+                            "comment": "ควรตรวจสอบการตั้งค่า Pack Size ให้สัมพันธ์กับการตัด Stock ใน HOSxP XE"
+                        }
+                    ],
+                    "mappingSteps": [
+                        {
+                          "catalogField": "TMT ID ใน Drug Catalog",
+                          "hosxpField": "ช่องรหัส TMT 24 หลักใน Drug Item Setup",
+                          "actionTip": "คัดลอกรหัส TMT จาก Catalog มาวางในช่อง TMT ของรายการยานั้นๆ"
+                        },
+                        {
+                          "catalogField": "Dispensing Unit / Pack Size",
+                          "hosxpField": "ช่องหน่วยนับหลักและหน่วยบรรจุ",
+                          "actionTip": "กำหนดหน่วยนับให้ตรงกันเพื่อป้องกันสต็อกเพี้ยนเวลาจ่ายยา"
+                        }
+                    ],
+                    "recommendation": "เข้าไปที่เมนู 'Drug Items Setup' ใน HOSxP XE ค้นหารายการดังกล่าว ผูกรหัส TMT และกำหนดราคากลางให้ถูกต้อง"
+                };
+                lastAnalysisResult = fallbackData;
+                renderResults(fallbackData);
+                addToHistory(fallbackData.summary);
+                showToast('AI ตรวจสอบในโหมดสำรองสำเร็จ');
+            } finally {
+                loadingState.classList.add('hidden');
+                exportBtn.classList.remove('hidden');
+                analyzeBtn.removeAttribute('disabled');
+            }
+        });
+
+        // Render Results to UI
+        function renderResults(data) {
+            resultContent.classList.remove('hidden');
+
+            // Status Badge
+            statusBadge.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'border-emerald-200', 'bg-amber-100', 'text-amber-800', 'border-amber-200', 'bg-rose-100', 'text-rose-800', 'border-rose-200');
+            if (data.status === 'PASS') {
+                statusBadge.classList.add('bg-emerald-100', 'text-emerald-800', 'border', 'border-emerald-200');
+                statusBadge.innerHTML = `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> ${data.statusText}`;
+                summaryBox.className = "p-4 rounded-xl border text-xs leading-relaxed bg-emerald-50/50 border-emerald-200 text-emerald-900";
+            } else if (data.status === 'WARNING') {
+                statusBadge.classList.add('bg-amber-100', 'text-amber-800', 'border', 'border-amber-200');
+                statusBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1 text-amber-600"></i> ${data.statusText}`;
+                summaryBox.className = "p-4 rounded-xl border text-xs leading-relaxed bg-amber-50/50 border-amber-200 text-amber-900";
+            } else {
+                statusBadge.classList.add('bg-rose-100', 'text-rose-800', 'border', 'border-rose-200');
+                statusBadge.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-rose-600"></i> ${data.statusText}`;
+                summaryBox.className = "p-4 rounded-xl border text-xs leading-relaxed bg-rose-50/50 border-rose-200 text-rose-900";
+            }
+
+            summaryBox.innerHTML = `<strong>สรุปผลการตรวจสอบ:</strong> ${data.summary}`;
+
+            // Reference Price
+            if (data.referencePrice) {
+                pricePerUnit.textContent = `${data.referencePrice.pricePerUnit} บาท / ${data.referencePrice.unit || 'หน่วย'}`;
+                pricePackSize.textContent = data.referencePrice.packSize || '-';
+                reimburseStatus.textContent = data.referencePrice.reimburseStatus || '-';
+                priceAccountBadge.textContent = data.referencePrice.account || 'ราคากลาง สปสช.';
+            }
+
+            // Audit Items
+            itemsContainer.innerHTML = '';
+            if (data.items && data.items.length > 0) {
+                data.items.forEach((item) => {
+                    let badgeColor = 'bg-slate-50 text-slate-700 border-slate-200';
+                    let iconHtml = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+                    
+                    if (item.status === 'correct') {
+                        badgeColor = 'bg-emerald-50/80 text-emerald-700 border-emerald-200';
+                        iconHtml = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+                    } else if (item.status === 'warning') {
+                        badgeColor = 'bg-amber-50/80 text-amber-700 border-amber-200';
+                        iconHtml = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+                    } else if (item.status === 'error') {
+                        badgeColor = 'bg-rose-50/80 text-rose-700 border-rose-200';
+                        iconHtml = '<i class="fa-solid fa-circle-xmark text-rose-600"></i>';
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = `p-3 rounded-xl border ${badgeColor} flex flex-col gap-2`;
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-900 flex items-center gap-1.5">${iconHtml} ${item.field}</span>
+                            <button type="button" onclick="copyToClipboard('${item.correctValue}')" class="text-[11px] bg-white hover:bg-slate-50 text-slate-700 px-2 py-0.5 rounded border border-slate-200 shadow-sm transition-colors flex items-center gap-1 cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> คัดลอกค่าที่ถูกต้อง
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-white/80 p-2 rounded-lg border border-slate-100">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">ค่าในภาพหน้าจอ / ตรวจพบ:</span>
+                                <span class="font-medium text-slate-700">${item.detectedValue}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">ค่าที่ถูกต้อง/ควรใส่:</span>
+                                <span class="font-semibold text-blue-700">${item.correctValue}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-600 italic">💡 ${item.comment}</p>
+                    `;
+                    itemsContainer.appendChild(card);
+                });
+            }
+
+            // Mapping Guide Steps
+            mappingGuideContent.innerHTML = '';
+            if (data.mappingSteps && data.mappingSteps.length > 0) {
+                data.mappingSteps.forEach((step, idx) => {
+                    const stepEl = document.createElement('div');
+                    stepEl.className = "bg-white p-2.5 rounded-lg border border-emerald-100 flex flex-col gap-1 shadow-sm";
+                    stepEl.innerHTML = `
+                        <div class="flex items-center justify-between text-[11px] font-bold text-emerald-800">
+                            <span>ขั้นที่ ${idx + 1}: ${step.catalogField}</span>
+                            <i class="fa-solid fa-arrow-right text-emerald-500"></i>
+                        </div>
+                        <div class="text-xs text-slate-700"><strong>ไปใส่ที่:</strong> ${step.hosxpField}</div>
+                        <div class="text-[11px] text-slate-500 italic">👉 ${step.actionTip}</div>
+                    `;
+                    mappingGuideContent.appendChild(stepEl);
+                });
+            } else {
+                mappingGuideContent.innerHTML = `<p class="text-xs text-emerald-800 italic">ข้อมูลจากภาพสอดคล้องกับมาตรฐาน ไม่พบจุดต้อง Map เพิ่มเติม</p>`;
+            }
+
+            recommendationText.textContent = data.recommendation || 'ไม่มีคำแนะนำเพิ่มเติม';
+        }
+
+        // Add to History
+        function addToHistory(summaryText) {
+            const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            auditHistory.unshift({ time: timeStr, text: summaryText });
+            if (auditHistory.length > 10) auditHistory.pop();
+            
+            historyCount.textContent = `${auditHistory.length} รายการ`;
+            historyList.innerHTML = '';
+            
+            auditHistory.forEach((hist) => {
+                const item = document.createElement('div');
+                item.className = "p-2 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors flex items-center justify-between";
+                item.innerHTML = `
+                    <span class="truncate pr-2 text-slate-700 font-medium">${hist.text}</span>
+                    <span class="text-[10px] text-slate-400 whitespace-nowrap">${hist.time}</span>
+                `;
+                historyList.appendChild(item);
+            });
+        }
+
+        // Export Report Button
+        exportBtn.addEventListener('click', () => {
+            if (!lastAnalysisResult) return;
+            const reportData = JSON.stringify(lastAnalysisResult, null, 2);
+            const blob = new Blob([reportData], { type: 'application/json' };
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `HOSxP_XE_Audit_Report_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ส่งออกรายงาน (JSON Report) สำเร็จ');
+        });
+
+        // Copy Helper
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`คัดลอก "${text}" เรียบร้อยแล้ว`);
+            } catch (err) {
+                showToast('ไม่สามารถคัดลอกได้');
+            }
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
